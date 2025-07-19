@@ -1,0 +1,6 @@
+<connections>
+    <connection from="north2center" to="center2south"/>
+    <connection from="south2center" to="center2north"/>
+    <connection from="west2center" to="center2east"/>
+    <connection from="east2center" to="center2west"/>
+</connections>
