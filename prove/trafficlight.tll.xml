@@ -1,12 +1,12 @@
 <additional>
     <tlLogic id="center" type="static" programID="myProgram" offset="0">
-        <!-- Verde Nord-Sud -->
+        <!-- Green Nord-Sud -->
         <phase duration="30" state="GrGr"/>
-        <!-- Giallo Nord-Sud -->
+        <!-- Yellow Nord-Sud -->
         <phase duration="3" state="yryr"/>
-        <!-- Verde Est-Ovest -->
+        <!-- Green Est-Ovest -->
         <phase duration="30" state="rGrG"/>
-        <!-- Giallo Est-Ovest -->
+        <!-- Yellow Est-Ovest -->
         <phase duration="3" state="ryry"/>
     </tlLogic>
 </additional>
