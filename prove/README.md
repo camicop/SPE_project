@@ -48,5 +48,7 @@ Each flow starts at second `0`, ends at `600` (10 minutes), and spawns vehicles 
 Once all files are in place:
 ```
 netconvert -n nodes.nod.xml -e edges.edg.xml -x connections.con.xml -o simple_intersection.net.xml
-sumo-gui -c config.sumocfg
+python3 -m venv my-venv 
+source my-venv/bin/activate 
+python3 run_sumo_poisson.py gui
 ```
