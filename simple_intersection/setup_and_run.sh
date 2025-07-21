@@ -19,4 +19,4 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # 5. Run simulation
-python3 run_sumo_poisson.py gui
+python3 run_sumo.py gui
