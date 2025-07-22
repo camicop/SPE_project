@@ -4,8 +4,6 @@ This project simulates a simple `+`-shaped intersection in SUMO, where vehicles 
 
 <img src="../assets/simple_intersection.gif" width="300"/>
 
----
-
 ## Project Structure
 
 | File                   | Description                                               |
@@ -56,6 +54,10 @@ chmod +x setup_and_run.sh
 And then run
 ```
 ./setup_and_run.sh
+```
+or
+```
+./setup_and_run.sh gui
 ```
 to run the simulation
 

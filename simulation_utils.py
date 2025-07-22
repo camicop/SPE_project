@@ -1,6 +1,8 @@
 import os
 import subprocess
 import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter
 
 def run_simulation(config_file, simulation_duration, gui=False):
     update_config_end_time(config_file, simulation_duration)
@@ -48,3 +50,41 @@ def update_config_end_time(config_path, new_end_time):
             end_elem.set("value", str(new_end_time))
 
     tree.write(config_path)
+
+    import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_vehicle_counts_over_time(tripinfo_file, simulation_duration):
+    if not os.path.exists(tripinfo_file):
+        print(f"Error: {tripinfo_file} not found.")
+        return
+
+    df = pd.read_xml(tripinfo_file)
+
+    # Inizializza il dizionario dei conteggi
+    time_series = {}
+    vehicle_types = df["vType"].unique()
+    for vtype in vehicle_types:
+        time_series[vtype] = np.zeros(simulation_duration + 1)
+
+    # Per ogni veicolo, aggiungi 1 nei secondi in cui è nel sistema
+    for _, row in df.iterrows():
+        vtype = row["vType"]
+        depart = int(row["depart"])
+        arrival = int(row["arrival"])
+        # Incrementa i secondi in cui l'auto è nel sistema
+        time_series[vtype][depart:arrival + 1] += 1
+
+    # Plot
+    plt.figure(figsize=(12, 6))
+    for vtype, counts in time_series.items():
+        smoothed = savgol_filter(counts, window_length=31, polyorder=3)  # regola i valori se necessario
+        plt.plot(range(simulation_duration + 1), smoothed, label=vtype)
+
+    plt.title("Numero di veicoli nel sistema nel tempo")
+    plt.xlabel("Tempo (s)")
+    plt.ylabel("Veicoli presenti")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()

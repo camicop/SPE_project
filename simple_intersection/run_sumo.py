@@ -6,14 +6,14 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation_utils import run_simulation, analyze_tripinfo, update_config_end_time
+from simulation_utils import run_simulation, analyze_tripinfo, plot_vehicle_counts_over_time
 
 # Simulation Constants 
 HOUR_DURATION = 3600       # duration of an hour in seconds
-NUM_HOURS = 3             # number of hours of simulation
+NUM_HOURS = 3              # number of hours of simulation
 
-NORTH_SOUTH_VEHICLES_PER_MINUTE = 16  # NORTH-SOUTH/SOUTH-NORTH vehicles per minute
-WEST_EAST_VEHICLES_PER_MINUTE = 12    # WEST-EAST/EAST-WEST vehicles per minute
+NORTH_SOUTH_VEHICLES_PER_MINUTE = 10  # NORTH-SOUTH/SOUTH-NORTH vehicles per minute
+WEST_EAST_VEHICLES_PER_MINUTE = 6    # WEST-EAST/EAST-WEST vehicles per minute
 
 # Derived Parameters 
 LAMBDA_RATE_NS = NORTH_SOUTH_VEHICLES_PER_MINUTE / 60       # vehicles per second, lamba value for poisson random variable
@@ -73,3 +73,4 @@ if __name__ == "__main__":
     generate_routes()
     run_simulation(config_file, SIMULATION_DURATION, gui=gui)
     analyze_tripinfo(tripinfo_file)
+    plot_vehicle_counts_over_time(tripinfo_file, SIMULATION_DURATION)
