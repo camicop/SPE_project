@@ -1,3 +1,5 @@
 simple_intersection.net.xml
 poisson_routes.rou.xml
 tripinfo.xml
+__pycache__/
+*.py[cod]
