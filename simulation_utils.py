@@ -16,12 +16,14 @@ def run_simulation(config_file, simulation_duration, gui=False):
     else:
         print(result.stdout)
 
-def analyze_tripinfo(tripinfo_file):
+def analyze_tripinfo(tripinfo_file, warmup_time):
     if not os.path.exists(tripinfo_file):
         print(f"Error: {tripinfo_file} not found.")
         return
 
     df = pd.read_xml(tripinfo_file)
+
+    df = df[df["depart"] >= warmup_time]
 
     mean_wait = df["waitingTime"].mean()
     mean_duration = df["duration"].mean()
@@ -54,7 +56,7 @@ def update_config_end_time(config_path, new_end_time):
     import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_vehicle_counts_over_time(tripinfo_file, simulation_duration):
+def plot_vehicle_counts_over_time(tripinfo_file, simulation_duration, warmup_time=0):
     if not os.path.exists(tripinfo_file):
         print(f"Error: {tripinfo_file} not found.")
         return
@@ -79,7 +81,8 @@ def plot_vehicle_counts_over_time(tripinfo_file, simulation_duration):
     plt.figure(figsize=(12, 6))
     for vtype, counts in time_series.items():
         smoothed = savgol_filter(counts, window_length=31, polyorder=3)  # regola i valori se necessario
-        plt.plot(range(simulation_duration + 1), smoothed, label=vtype)
+    start_plot = warmup_time if warmup_time else 0
+    plt.plot(range(start_plot, simulation_duration + 1), smoothed[start_plot:], label=vtype)
 
     plt.title("Numero di veicoli nel sistema nel tempo")
     plt.xlabel("Tempo (s)")
@@ -88,3 +91,32 @@ def plot_vehicle_counts_over_time(tripinfo_file, simulation_duration):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+
+def estimate_warmup_time(tripinfo_file, simulation_duration, threshold=0.01, window=60):
+    import numpy as np
+    if not os.path.exists(tripinfo_file):
+        print(f"Error: {tripinfo_file} not found.")
+        return 0
+
+    df = pd.read_xml(tripinfo_file)
+
+    # Costruisce la serie temporale come nel plot
+    time_series = np.zeros(simulation_duration + 1)
+    for _, row in df.iterrows():
+        depart = int(row["depart"])
+        arrival = int(row["arrival"])
+        time_series[depart:arrival + 1] += 1
+
+    # Calcolo della media mobile su finestra
+    rolling_avg = pd.Series(time_series).rolling(window=window).mean()
+
+    # Trova il primo punto dove la variazione percentuale si stabilizza sotto la soglia
+    for t in range(window, simulation_duration - window):
+        delta = abs(rolling_avg[t] - rolling_avg[t - 1]) / (rolling_avg[t - 1] + 1e-6)
+        if delta < threshold:
+            print(f"Estimated warm-up ends at second {t}")
+            return t
+
+    print("No stable warm-up period detected; defaulting to 0.")
+    return 0

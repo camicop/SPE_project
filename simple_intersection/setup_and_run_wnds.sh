@@ -21,4 +21,4 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # 5. Run simulation
-$PYTHON run_sumo.py gui
+$PYTHON run_sumo.py 

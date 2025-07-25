@@ -6,7 +6,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation_utils import run_simulation, analyze_tripinfo, plot_vehicle_counts_over_time
+from simulation_utils import run_simulation, analyze_tripinfo, plot_vehicle_counts_over_time, estimate_warmup_time
 
 # Simulation Constants 
 HOUR_DURATION = 3600       # duration of an hour in seconds
@@ -64,13 +64,69 @@ def generate_routes():
 
     print(f"Generated vehicles in {route_file}")
 
-if __name__ == "__main__":
-    gui = False
-    if len(sys.argv) > 1:
-        if sys.argv[1].lower() in ["gui", "--gui", "-g"]:
-            gui = True
+#if __name__ == "__main__":
+    #gui = False
+    #if len(sys.argv) > 1:
+     #   if sys.argv[1].lower() in ["gui", "--gui", "-g"]:
+      #      gui = True
 
+    #generate_routes()
+    #run_simulation(config_file, SIMULATION_DURATION, gui=gui)
+    #analyze_tripinfo(tripinfo_file)
+    #plot_vehicle_counts_over_time(tripinfo_file, SIMULATION_DURATION)
+
+
+def first_manual_gui_run():
+    print("\n=== PRIMA SIMULAZIONE CON GUI ===")
     generate_routes()
-    run_simulation(config_file, SIMULATION_DURATION, gui=gui)
-    analyze_tripinfo(tripinfo_file)
-    plot_vehicle_counts_over_time(tripinfo_file, SIMULATION_DURATION)
+    run_simulation(config_file, SIMULATION_DURATION, gui=True)
+    plot_vehicle_counts_over_time(tripinfo_file, SIMULATION_DURATION, warmup_time=0)
+
+
+
+def final_automatic_simulations(n_runs, warmup_time):
+    results = []
+    for i in range(n_runs):
+        print(f"\n--- RUN {i + 1}/{n_runs} ---")
+        generate_routes()
+        run_simulation(config_file, SIMULATION_DURATION, gui=False)
+
+        df = pd.read_xml(tripinfo_file)
+        df = df[df["depart"] >= warmup_time]
+
+        results.append({
+            "vehicles": len(df),
+            "avg_waiting": df["waitingTime"].mean(),
+            "avg_duration": df["duration"].mean(),
+            "avg_loss": df["timeLoss"].mean()
+        })
+
+    print("\n=== STATISTICHE AGGREGATE ===")
+    print(f"Numero simulazioni: {n_runs}")
+    print(f"Media veicoli simulati: {int(sum(r['vehicles'] for r in results) / n_runs)}")
+    print(f"Media tempi attesa: {sum(r['avg_waiting'] for r in results)/n_runs:.2f} s")
+    print(f"Media durata viaggio: {sum(r['avg_duration'] for r in results)/n_runs:.2f} s")
+    print(f"Media perdita di tempo: {sum(r['avg_loss'] for r in results)/n_runs:.2f} s")
+
+def estimate_average_warmup(n_runs=3):
+    warmups = []
+    for i in range(n_runs):
+        print(f"\n--- WARM-UP SIMULATION {i+1}/{n_runs} ---")
+        generate_routes()
+        run_simulation(config_file, SIMULATION_DURATION, gui=False)
+        warmup_time = estimate_warmup_time(tripinfo_file, SIMULATION_DURATION)
+        warmups.append(warmup_time)
+    avg_warmup = int(sum(warmups) / len(warmups))
+    print(f"\n Warm-up medio stimato su {n_runs} simulazioni: {avg_warmup} secondi")
+    return avg_warmup
+
+
+if __name__ == "__main__":
+    # 1. Manuale con GUI
+    first_manual_gui_run()
+
+    # 2. Stima del warm-up su più simulazioni
+    estimated_warmup = estimate_average_warmup(n_runs=5)
+
+    # 3. Simulazioni finali
+    final_automatic_simulations(n_runs=10, warmup_time=estimated_warmup)
