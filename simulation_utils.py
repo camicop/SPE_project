@@ -120,3 +120,22 @@ def estimate_warmup_time(tripinfo_file, simulation_duration, threshold=0.01, win
 
     print("No stable warm-up period detected; defaulting to 0.")
     return 0
+
+def plot_multiple_time_series(series_list, highlight_index=None):
+    import matplotlib.pyplot as plt
+    from scipy.signal import savgol_filter
+
+    plt.figure(figsize=(12, 6))
+    for i, series in enumerate(series_list):
+        smoothed = savgol_filter(series, window_length=31, polyorder=3)
+        label = "Simulazione manuale (GUI)" if i == highlight_index else f"Simulazione {i}"
+        style = '-' if i == highlight_index else '--'
+        plt.plot(smoothed, style, label=label)
+
+    plt.title("Numero di veicoli nel sistema (curve warm-up multiple)")
+    plt.xlabel("Tempo (s)")
+    plt.ylabel("Veicoli presenti")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
