@@ -6,7 +6,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation_utils import run_simulation, analyze_tripinfo, plot_vehicle_counts_over_time, estimate_warmup_time
+from simulation_utils import run_simulation, analyze_tripinfo, plot_vehicle_counts_over_time, estimate_warmup_time, plot_multiple_time_series
 
 # Simulation Constants 
 HOUR_DURATION = 3600       # duration of an hour in seconds
@@ -80,7 +80,17 @@ def first_manual_gui_run():
     print("\n=== PRIMA SIMULAZIONE CON GUI ===")
     generate_routes()
     run_simulation(config_file, SIMULATION_DURATION, gui=True)
-    plot_vehicle_counts_over_time(tripinfo_file, SIMULATION_DURATION, warmup_time=0)
+
+    # Estrai la curva dei veicoli
+    df = pd.read_xml(tripinfo_file)
+    series = np.zeros(SIMULATION_DURATION + 1)
+    for _, row in df.iterrows():
+        depart = int(row["depart"])
+        arrival = int(row["arrival"])
+        series[depart:arrival + 1] += 1
+
+    return series  # Restituisce la curva della simulazione manuale
+
 
 
 
@@ -108,14 +118,32 @@ def final_automatic_simulations(n_runs, warmup_time):
     print(f"Media durata viaggio: {sum(r['avg_duration'] for r in results)/n_runs:.2f} s")
     print(f"Media perdita di tempo: {sum(r['avg_loss'] for r in results)/n_runs:.2f} s")
 
-def estimate_average_warmup(n_runs=3):
+def estimate_average_warmup(n_runs=3, extra_series=None):
     warmups = []
+    all_time_series = []
+
+    if extra_series is not None:
+        all_time_series.append(extra_series)
+
     for i in range(n_runs):
         print(f"\n--- WARM-UP SIMULATION {i+1}/{n_runs} ---")
         generate_routes()
         run_simulation(config_file, SIMULATION_DURATION, gui=False)
+
         warmup_time = estimate_warmup_time(tripinfo_file, SIMULATION_DURATION)
         warmups.append(warmup_time)
+
+        df = pd.read_xml(tripinfo_file)
+        series = np.zeros(SIMULATION_DURATION + 1)
+        for _, row in df.iterrows():
+            depart = int(row["depart"])
+            arrival = int(row["arrival"])
+            series[depart:arrival + 1] += 1
+        all_time_series.append(series)
+
+    # Mostra grafico combinato con label per il primo
+    plot_multiple_time_series(all_time_series, highlight_index=0)
+
     avg_warmup = int(sum(warmups) / len(warmups))
     print(f"\n Warm-up medio stimato su {n_runs} simulazioni: {avg_warmup} secondi")
     return avg_warmup
@@ -123,10 +151,10 @@ def estimate_average_warmup(n_runs=3):
 
 if __name__ == "__main__":
     # 1. Manuale con GUI
-    first_manual_gui_run()
+    manual_series = first_manual_gui_run()  # curva manuale
+
 
     # 2. Stima del warm-up su più simulazioni
-    estimated_warmup = estimate_average_warmup(n_runs=5)
-
+    estimated_warmup = estimate_average_warmup(n_runs=3, extra_series=manual_series)
     # 3. Simulazioni finali
     final_automatic_simulations(n_runs=10, warmup_time=estimated_warmup)
