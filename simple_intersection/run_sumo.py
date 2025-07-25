@@ -153,8 +153,8 @@ if __name__ == "__main__":
     # 1. Manuale con GUI
     manual_series = first_manual_gui_run()  # curva manuale
 
-
     # 2. Stima del warm-up su più simulazioni
     estimated_warmup = estimate_average_warmup(n_runs=3, extra_series=manual_series)
+    
     # 3. Simulazioni finali
     final_automatic_simulations(n_runs=10, warmup_time=estimated_warmup)
