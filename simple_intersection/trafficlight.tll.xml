@@ -1,7 +1,7 @@
 <additional>
     <tlLogic id="center" type="static" programID="myProgram" offset="0">
         <!-- Green Nord-Sud -->
-        <phase duration="30" state="GrGr"/>
+        <phase duration="50" state="GrGr"/>
         <!-- Yellow Nord-Sud -->
         <phase duration="3" state="yryr"/>
         <!-- Green Est-Ovest -->

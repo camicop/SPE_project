@@ -1,6 +1,7 @@
 import os
 import subprocess
 import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 
@@ -86,5 +87,72 @@ def plot_vehicle_counts_over_time(tripinfo_file, simulation_duration):
     plt.ylabel("Veicoli presenti")
     plt.legend()
     plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def jain_index(x):
+    x = np.array(x)
+    if np.sum(x) == 0:
+        return 1.0  
+    return (np.sum(x) ** 2) / (len(x) * np.sum(x ** 2))
+
+def lorenz_curve(data):
+    sorted_data = np.sort(data)
+    cum_data = np.cumsum(sorted_data)
+    total = cum_data[-1]
+    if total == 0:
+        return np.linspace(0, 1, len(data)), np.linspace(0, 1, len(data))
+    lorenz = cum_data / total
+    x_vals = np.linspace(0, 1, len(data))
+    return x_vals, lorenz
+
+def analyze_fairness_and_distribution(tripinfo_file, vtypes):
+    if not os.path.exists(tripinfo_file):
+        print(f"Error: {tripinfo_file} not found.")
+        return
+
+    df = pd.read_xml(tripinfo_file)
+    df_filtered = df[df["vType"].isin(vtypes)]
+
+    if df_filtered.empty:
+        print("No vehicles found for selected vTypes.")
+        return
+
+    metrics = {
+        "duration": df_filtered["duration"].values,
+        "timeLoss": df_filtered["timeLoss"].values,
+        "waitingTime": df_filtered["waitingTime"].values
+    }
+
+    print(f"\n--- Jain's Fairness Index ---")
+    for key, values in metrics.items():
+        fairness = jain_index(values)
+        print(f"{key:<12}: {fairness:.4f}")
+
+    # Lorenz curves
+    fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+    for i, (key, values) in enumerate(metrics.items()):
+        x_vals, lorenz_vals = lorenz_curve(values)
+        axs[i].plot(x_vals, lorenz_vals, label=f'Lorenz - {key}')
+        axs[i].plot([0, 1], [0, 1], 'k--', label='Uguaglianza perfetta')
+        axs[i].set_title(f"Lorenz Curve - {key}")
+        axs[i].set_xlabel("Frazione veicoli")
+        axs[i].set_ylabel("Frazione cumulata")
+        axs[i].legend()
+        axs[i].grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+    # Distribuzioni
+    fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+    for i, (key, values) in enumerate(metrics.items()):
+        sns.histplot(values, bins=30, kde=True, ax=axs[i])
+        axs[i].set_title(f"Distribuzione - {key}")
+        axs[i].set_xlabel("Secondi")
+        axs[i].set_ylabel("Frequenza")
+        axs[i].grid(True)
+
     plt.tight_layout()
     plt.show()

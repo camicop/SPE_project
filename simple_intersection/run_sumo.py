@@ -6,7 +6,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation_utils import run_simulation, analyze_tripinfo, plot_vehicle_counts_over_time
+from simulation_utils import run_simulation, analyze_tripinfo, plot_vehicle_counts_over_time, analyze_fairness_and_distribution
 
 # Simulation Constants 
 HOUR_DURATION = 3600       # duration of an hour in seconds
@@ -74,3 +74,4 @@ if __name__ == "__main__":
     run_simulation(config_file, SIMULATION_DURATION, gui=gui)
     analyze_tripinfo(tripinfo_file)
     plot_vehicle_counts_over_time(tripinfo_file, SIMULATION_DURATION)
+    analyze_fairness_and_distribution(tripinfo_file, ["north2south_car", "south2north_car", "west2east_car", "east2west_car"])
