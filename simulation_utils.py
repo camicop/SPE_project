@@ -135,7 +135,7 @@ def plot_multiple_time_series(series_list, highlight_index=None):
     plt.title("Numero di veicoli nel sistema (curve warm-up multiple)")
     plt.xlabel("Tempo (s)")
     plt.ylabel("Veicoli presenti")
-    plt.legend()
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.grid(True)
     plt.tight_layout()
     plt.show()
