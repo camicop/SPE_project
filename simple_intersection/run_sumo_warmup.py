@@ -75,7 +75,7 @@ def number_of_cars_warmup(num_runs):
 
     # Plot all runs + average
     combined = all_series + [avg_series]
-    plot_multiple_time_series(combined, highlight_index=None)
+    plot_multiple_time_series(combined, highlight_index=None, title="Number of vehicles in the system over time", y_label="Number of vehicles")
 
     # Plot average series over time
     plt.figure(figsize=(10,5))
@@ -137,7 +137,7 @@ def travel_time_warmup(num_runs):
 
     # Plot: all runs + average
     combined = all_duration_series + [avg_series]
-    plot_multiple_time_series(combined, highlight_index=None)
+    plot_multiple_time_series(combined, highlight_index=None, title="Average duration of travel over time", y_label="Average duration")
 
     # Plot: average
     plt.figure(figsize=(10, 5))
