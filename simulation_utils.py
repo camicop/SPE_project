@@ -7,7 +7,7 @@ from scipy.signal import savgol_filter
 def run_simulation(config_file, simulation_duration, gui=False):
     update_config_end_time(config_file, simulation_duration)
     print("Starting SUMO simulation...")
-    command = ["sumo-gui" if gui else "sumo", "-c", config_file]
+    command = ["sumo-gui" if gui else "sumo", "-c", config_file, "--no-step-log"]
     result = subprocess.run(command, capture_output=True, text=True)
 
     print("SUMO simulation finished.")
@@ -85,7 +85,7 @@ def plot_vehicle_counts_over_time(tripinfo_file, simulation_duration, warmup_tim
     plt.plot(range(start_plot, simulation_duration + 1), smoothed[start_plot:], label=vtype)
 
     plt.title("Numero di veicoli nel sistema nel tempo")
-    plt.xlabel("Tempo (s)")
+    plt.xlabel("Time (s)")
     plt.ylabel("Veicoli presenti")
     plt.legend()
     plt.grid(True)
@@ -121,21 +121,22 @@ def estimate_warmup_time(tripinfo_file, simulation_duration, threshold=0.01, win
     print("No stable warm-up period detected; defaulting to 0.")
     return 0
 
-def plot_multiple_time_series(series_list, title, y_label, highlight_index=None):
+def plot_multiple_time_series(series_list, title, y_label, labels=None, show_legend=True, apply_smoothing=True):
     import matplotlib.pyplot as plt
     from scipy.signal import savgol_filter
 
     plt.figure(figsize=(12, 6))
     for i, series in enumerate(series_list):
-        smoothed = savgol_filter(series, window_length=31, polyorder=3)
-        label = "Simulazione manuale (GUI)" if i == highlight_index else f"Simulazione {i}"
-        style = '-' if i == highlight_index else '--'
-        plt.plot(smoothed, style, label=label)
+        data = savgol_filter(series, window_length=31, polyorder=3) if apply_smoothing else series
+        label = labels[i] if labels and i < len(labels) else f"Simulation {i}"
+        plt.plot(data, '-', label=label)
 
     plt.title(title)
-    plt.xlabel("Tempo (s)")
+    plt.xlabel("Time (s)")
     plt.ylabel(y_label)
-    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    if show_legend:
+        plt.legend(loc='upper right')
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+

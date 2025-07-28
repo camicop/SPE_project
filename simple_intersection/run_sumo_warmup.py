@@ -75,30 +75,33 @@ def number_of_cars_warmup(num_runs):
 
     # Plot all runs + average
     combined = all_series + [avg_series]
-    plot_multiple_time_series(combined, highlight_index=None, title="Number of vehicles in the system over time", y_label="Number of vehicles")
+    plot_multiple_time_series(
+        combined, 
+        title="Number of vehicles in the system over time", 
+        y_label="Number of vehicles", 
+        show_legend=False, 
+        apply_smoothing=False  
+        ) 
 
-    # Plot average series over time
-    plt.figure(figsize=(10,5))
-    plt.plot(avg_series, '-', label='Average over runs')
-    plt.title('Average number of vehicles in system over time')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Average vehicle count')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # Plot just the average of all runs
+    plot_multiple_time_series(
+        [avg_series], 
+        title="Average number of vehicles in system over time", 
+        y_label="verage vehicle count", 
+        show_legend=False, 
+        apply_smoothing=False  
+        )
 
     # Plot cumulative average of the mean series
     cum_avg = np.cumsum(avg_series) / np.arange(1, len(avg_series)+1)
-    plt.figure(figsize=(10,5))
-    plt.plot(cum_avg, '-', label='Cumulative average')
-    plt.title('Cumulative average of vehicle counts over time')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Cumulative average vehicles')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    plot_multiple_time_series(
+        [cum_avg],
+        title="Cumulative average of vehicle counts over time",
+        y_label="Cumulative average vehicles",
+        show_legend=False, 
+        apply_smoothing=False  
+        )
+
 
 def travel_time_warmup(num_runs):
     def compute_average_travel_time_series(arrivals, durations, sim_duration):
@@ -137,30 +140,34 @@ def travel_time_warmup(num_runs):
 
     # Plot: all runs + average
     combined = all_duration_series + [avg_series]
-    plot_multiple_time_series(combined, highlight_index=None, title="Average duration of travel over time", y_label="Average duration")
+    labels = [f"Run {i}" for i in range(num_runs)] + ["Average"]
+    plot_multiple_time_series(
+        combined, 
+        title="Average duration of travel over time", 
+        y_label="Average duration (s)", 
+        show_legend=False, 
+        apply_smoothing=False  
+    )
 
-    # Plot: average
-    plt.figure(figsize=(10, 5))
-    plt.plot(avg_series, '-', label='Average travel time over runs')
-    plt.title('Average travel time over time')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Average travel time (s)')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # Plot: average (senza smoothing opzionale)
+    plot_multiple_time_series(
+        [avg_series],
+        title="Average travel time over runs",
+        y_label="Average travel time (s)",
+        show_legend=False, 
+        apply_smoothing=False  
+    )
 
-    # Plot: cumulative averge of average 
+    # Plot: cumulative average of average travel time (senza smoothing)
     cum_avg = np.cumsum(np.nan_to_num(avg_series)) / np.arange(1, len(avg_series) + 1)
-    plt.figure(figsize=(10, 5))
-    plt.plot(cum_avg, '-', label='Cumulative average of average travel time')
-    plt.title('Cumulative average of average travel time over time')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Cumulative average travel time (s)')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    plot_multiple_time_series(
+        [cum_avg],
+        title="Cumulative average of average travel time over time",
+        y_label="Cumulative average travel time (s)",
+        show_legend=False, 
+        apply_smoothing=False  
+    )
+
 
 
 # Route generation
@@ -171,6 +178,6 @@ def generate_routes():
     print(f"Generated routes in {route_file}")
 
 if __name__ == "__main__":
-    #number_of_cars_warmup(50)
-    travel_time_warmup(50)
+    #number_of_cars_warmup(5)
+    travel_time_warmup(10)
 
