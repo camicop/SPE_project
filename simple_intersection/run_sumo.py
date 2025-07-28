@@ -5,8 +5,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import math
-from scipy import stats
-
+from scipy.stats import norm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
@@ -78,19 +77,20 @@ def generate_routes(seed=None):
 
 
 
-def mean_confidence_interval(data, confidence=0.95):
-
+def confidence_interval_normal(data, confidence=0.95):
     a = np.array(data)
     n = len(a)
     mean = np.mean(a)
-    sem = stats.sem(a)  # standard error of the mean
-    margin = sem * stats.t.ppf((1 + confidence) / 2., n-1)
+    std_err = np.std(a, ddof=1) / np.sqrt(n)  # standard error
+    z = norm.ppf((1 + confidence) / 2)        # z-score
+    margin = z * std_err
     return mean, mean - margin, mean + margin
+
 
 if __name__ == "__main__":
     SIMULATION_DURATION = 10800
-    N_WARMUP_RUNS = 3
-    N_FINAL_RUNS = 5
+    N_WARMUP_RUNS = 5
+    N_FINAL_RUNS = 30
 
     strategies = {
         "fixed": {
@@ -161,9 +161,9 @@ if __name__ == "__main__":
             vehicles_counts.append(len(df))
 
         # Calculate mean, confidence intervals, and variance
-        w_mean, w_ci_low, w_ci_high = mean_confidence_interval(waitings)
-        d_mean, d_ci_low, d_ci_high = mean_confidence_interval(durations)
-        l_mean, l_ci_low, l_ci_high = mean_confidence_interval(losses)
+        w_mean, w_ci_low, w_ci_high = confidence_interval_normal(waitings)
+        d_mean, d_ci_low, d_ci_high = confidence_interval_normal(durations)
+        l_mean, l_ci_low, l_ci_high = confidence_interval_normal(losses)
 
         w_var = np.var(waitings, ddof=1)
         d_var = np.var(durations, ddof=1)
