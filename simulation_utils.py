@@ -125,6 +125,7 @@ def plot_multiple_time_series(series_list, title, y_label, labels=None, show_leg
     import matplotlib.pyplot as plt
     from scipy.signal import savgol_filter
 
+    plt.rcParams.update({'font.size': 20})
     plt.figure(figsize=(12, 6))
     for i, series in enumerate(series_list):
         data = savgol_filter(series, window_length=31, polyorder=3) if apply_smoothing else series

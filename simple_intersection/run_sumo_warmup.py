@@ -52,9 +52,6 @@ east_west_flow = TrafficFlow(
 
 flows = [north_south_flow, south_north_flow, west_east_flow, east_west_flow]
 
-def compute_average_series(series_list):
-    return np.mean(series_list, axis=0)
-
 def number_of_cars_warmup(num_runs):
     all_series = []
 
@@ -71,13 +68,13 @@ def number_of_cars_warmup(num_runs):
         all_series.append(series)
 
     # Compute average series
-    avg_series = compute_average_series(all_series)
+    avg_series = np.mean(all_series, axis=0)
 
     # Plot all runs + average
     combined = all_series + [avg_series]
     plot_multiple_time_series(
         combined, 
-        title="Number of vehicles in the system over time", 
+        title="Number of vehicles in the system over time - All Runs", 
         y_label="Number of vehicles", 
         show_legend=False, 
         apply_smoothing=False  
@@ -103,70 +100,81 @@ def number_of_cars_warmup(num_runs):
         )
 
 
-def travel_time_warmup(num_runs):
-    def compute_average_travel_time_series(arrivals, durations, sim_duration):
-        cumulative_durations = np.zeros(sim_duration + 1)
-        cumulative_counts = np.zeros(sim_duration + 1)
-
-        for a, d in zip(arrivals, durations):
-            a = int(a)
-            if a <= sim_duration:
-                cumulative_durations[a] += d
-                cumulative_counts[a] += 1
-
-        cumulative_durations = np.cumsum(cumulative_durations)
-        cumulative_counts = np.cumsum(cumulative_counts)
-
+def travel_duration_warmup(num_runs):
+    def compute_instantaneous_travel_time_series_fast(arrivals, durations, sim_duration):
+        arrivals = np.array(arrivals)
+        durations = np.array(durations)
+        departures = arrivals + durations
+        
         avg_series = np.full(sim_duration + 1, np.nan)
-        valid = cumulative_counts > 0
-        avg_series[valid] = cumulative_durations[valid] / cumulative_counts[valid]
+        
+        for t in range(sim_duration + 1):
+            # Vectorized check: vehicles present at time t
+            in_system = (arrivals <= t) & (t < departures)
+            
+            if np.any(in_system):
+                # Average duration of vehicles currently in system
+                avg_series[t] = np.mean(durations[in_system])
+        
         return avg_series
 
+    # Rest of the function remains the same
     all_duration_series = []
-
     for i in range(num_runs):
         print(f"\n--- Run {i+1}/{num_runs} ---")
         generate_routes()
         run_simulation(config_file, SIMULATION_DURATION, gui=False)
+        
         df = pd.read_xml(tripinfo_file)
-
         arrivals = df['arrival'].astype(float).values
         durations = df['duration'].astype(float).values
-
-        series = compute_average_travel_time_series(arrivals, durations, SIMULATION_DURATION)
+        
+        series = compute_instantaneous_travel_time_series_fast(arrivals, durations, SIMULATION_DURATION)
         all_duration_series.append(series)
 
+    # Average across all runs
     avg_series = np.nanmean(all_duration_series, axis=0)
 
-    # Plot: all runs + average
+    # Plot all runs + average
     combined = all_duration_series + [avg_series]
-    labels = [f"Run {i}" for i in range(num_runs)] + ["Average"]
+    labels = [f"Run {i+1}" for i in range(num_runs)] + ["Average"]
     plot_multiple_time_series(
-        combined, 
-        title="Average duration of travel over time", 
-        y_label="Average duration (s)", 
-        show_legend=False, 
-        apply_smoothing=False  
+        combined,
+        title="Instantaneous Average Travel Time - All Runs",
+        y_label="Average travel time (s)",
+        show_legend=False,
+        apply_smoothing=False
     )
 
-    # Plot: average (senza smoothing opzionale)
+    # Plot just the average of all runs
     plot_multiple_time_series(
         [avg_series],
-        title="Average travel time over runs",
+        title="Average Travel Time Across All Runs",
         y_label="Average travel time (s)",
-        show_legend=False, 
-        apply_smoothing=False  
+        show_legend=False,
+        apply_smoothing=False
     )
 
-    # Plot: cumulative average of average travel time (senza smoothing)
-    cum_avg = np.cumsum(np.nan_to_num(avg_series)) / np.arange(1, len(avg_series) + 1)
-    plot_multiple_time_series(
-        [cum_avg],
-        title="Cumulative average of average travel time over time",
-        y_label="Cumulative average travel time (s)",
-        show_legend=False, 
-        apply_smoothing=False  
-    )
+    # Plot cumulative average of the mean series
+    valid_mask = ~np.isnan(avg_series)
+    if np.any(valid_mask):
+        # Calculate cumulative average only on valid values
+        valid_values = avg_series[valid_mask]
+        valid_indices = np.where(valid_mask)[0]
+       
+        cum_avg = np.cumsum(valid_values) / np.arange(1, len(valid_values) + 1)
+       
+        # Recreate full array with NaN where necessary
+        full_cum_avg = np.full_like(avg_series, np.nan)
+        full_cum_avg[valid_indices] = cum_avg
+       
+        plot_multiple_time_series(
+            [full_cum_avg],
+            title="Cumulative Average Travel Time (for Warm-up Analysis)",
+            y_label="Cumulative average travel time (s)",
+            show_legend=False,
+            apply_smoothing=False
+        )
 
 
 
@@ -179,5 +187,5 @@ def generate_routes():
 
 if __name__ == "__main__":
     #number_of_cars_warmup(5)
-    travel_time_warmup(10)
+    travel_duration_warmup(5)
 

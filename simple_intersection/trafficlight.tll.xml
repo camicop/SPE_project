@@ -3,10 +3,10 @@
         <!-- Green Nord-Sud -->
         <phase duration="30" state="GrGr"/>
         <!-- Yellow Nord-Sud -->
-        <phase duration="3" state="yryr"/>
+        <phase duration="5" state="yryr"/>
         <!-- Green Est-Ovest -->
         <phase duration="30" state="rGrG"/>
         <!-- Yellow Est-Ovest -->
-        <phase duration="3" state="ryry"/>
+        <phase duration="5" state="ryry"/>
     </tlLogic>
 </additional>
