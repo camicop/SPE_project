@@ -1,0 +1,16 @@
+<configuration>
+    <input>
+        <net-file value="simple_intersection.net.xml" />
+        <route-files value="poisson_routes.rou.xml" />
+    </input>
+
+    <time>
+        <begin value="0" />
+        <end value="10800" />
+        <step-length value="1" />
+    </time>
+
+    <output>
+        <tripinfo-output value="tripinfo_adaptive.xml" />
+    </output>
+</configuration>

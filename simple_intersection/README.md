@@ -14,7 +14,8 @@ This project simulates a simple `+`-shaped intersection in SUMO, where vehicles 
 | `trafficlight.tll.xml` | Sets the traffic light logic, including green/yellow phases.|
 | `routes.rou.xml`       | Contains vehicle types, routes, and traffic flows.        |
 | `config.sumocfg`       | Main configuration file for running the simulation.       |
-| `setup_and_run.sh`     | Script to build the network and run the simulation.       |
+| `setup_and_run.sh`     | Script to build the network and run the simulation.    
+| `setup_and_run_wnds.sh`| Script to build the network and run the simulation on windows.|
 | `run_sumo.py`          | main Python script that launches the SUMO simulation.     |
 
 ---

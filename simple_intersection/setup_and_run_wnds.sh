@@ -21,4 +21,5 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # 5. Run simulation
-$PYTHON run_sumo.py 
+#$PYTHON run_sumo_warmup.py "$@" 
+$PYTHON run_sumo.py

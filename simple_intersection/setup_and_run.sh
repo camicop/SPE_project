@@ -20,3 +20,4 @@ pip install -r requirements.txt
 
 # 5. Run simulation
 python3 run_sumo_warmup.py "$@"
+#$python3 run_sumo.py

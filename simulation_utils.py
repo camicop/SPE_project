@@ -2,12 +2,19 @@ import os
 import subprocess
 import pandas as pd
 import matplotlib.pyplot as plt
+
+import traci
+import xml.etree.ElementTree as ET
+
+import numpy as np
+
 from scipy.signal import savgol_filter
 
-def run_simulation(config_file, simulation_duration, gui=False):
+def run_simulation(config_file, simulation_duration, gui=False, tripinfo_file="tripinfo.xml"):
     update_config_end_time(config_file, simulation_duration)
     print("Starting SUMO simulation...")
     command = ["sumo-gui" if gui else "sumo", "-c", config_file]
+    command += ["--tripinfo-output", tripinfo_file]
     result = subprocess.run(command, capture_output=True, text=True)
 
     print("SUMO simulation finished.")
@@ -52,9 +59,6 @@ def update_config_end_time(config_path, new_end_time):
             end_elem.set("value", str(new_end_time))
 
     tree.write(config_path)
-
-    import matplotlib.pyplot as plt
-import numpy as np
 
 def plot_vehicle_counts_over_time(tripinfo_file, simulation_duration, warmup_time=0):
     if not os.path.exists(tripinfo_file):
@@ -139,3 +143,63 @@ def plot_multiple_time_series(series_list, title, y_label, highlight_index=None)
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+
+def _update_config_for_adaptive(config_path, new_end_time, tripinfo_output):
+    tree = ET.parse(config_path)
+    root = tree.getroot()
+
+    for time_elem in root.findall("time"):
+        for child in time_elem:
+            if child.tag == "end":
+                child.set("value", str(new_end_time))
+                break
+        else:
+            end_elem = ET.SubElement(time_elem, "end")
+            end_elem.set("value", str(new_end_time))
+
+    output_elem = root.find("output")
+    if output_elem is None:
+        output_elem = ET.SubElement(root, "output")
+    tripinfo_elem = output_elem.find("tripinfo-output")
+    if tripinfo_elem is None:
+        tripinfo_elem = ET.SubElement(output_elem, "tripinfo-output")
+    tripinfo_elem.set("value", tripinfo_output)
+
+    tree.write(config_path)
+
+
+def run_adaptive_simulation(config_file, simulation_duration, tripinfo_file="tripinfo_adaptive.xml"):
+    _update_config_for_adaptive(config_file, simulation_duration, tripinfo_file)
+
+    sumo_cmd = ["sumo", "-c", config_file, "--tripinfo-output", tripinfo_file]
+    traci.start(sumo_cmd)
+
+    tls_id = traci.trafficlight.getIDList()[0]
+    current_phase = 0
+    phase_duration = 10
+    phase_timer = 0
+
+    while traci.simulation.getTime() < simulation_duration:
+        traci.simulationStep()
+        phase_timer += 1
+
+        if phase_timer >= phase_duration:
+            ns_queue = (
+                traci.lane.getLastStepVehicleNumber("north2center_0") +
+                traci.lane.getLastStepVehicleNumber("south2center_0")
+            )
+            ew_queue = (
+                traci.lane.getLastStepVehicleNumber("east2center_0") +
+                traci.lane.getLastStepVehicleNumber("west2center_0")
+            )
+
+            if ns_queue > ew_queue:
+                current_phase = 0  # Nord-Sud verde
+            else:
+                current_phase = 2  # Est-Ovest verde
+
+            traci.trafficlight.setPhase(tls_id, current_phase)
+            phase_timer = 0
+
+    traci.close()
