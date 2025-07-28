@@ -25,9 +25,9 @@ This project simulates a simple `+`-shaped intersection in SUMO, where vehicles 
 The intersection uses a **4-phase static traffic light**:
 
 1. **North-South green** — 30 seconds  
-2. **North-South yellow** — 3 seconds  
+2. **North-South yellow** — 5 seconds  
 3. **East-West green** — 30 seconds  
-4. **East-West yellow** — 3 seconds  
+4. **East-West yellow** — 5 seconds  
 
 ---
 
