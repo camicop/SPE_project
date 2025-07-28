@@ -16,16 +16,17 @@ from simulation_utils import run_simulation, analyze_tripinfo, estimate_warmup_t
 # Simulation Constants
 HOUR_DURATION = 3600       # duration of one hour in seconds
 NUM_HOURS = 3              # number of hours to simulate
+WARMUP_TIME = 4000         # warmup time in seconds
+NUM_RUNS = 50              # number of runs
 
 NORTH_SOUTH_VEHICLES_PER_MINUTE = 10  # Vehicles per minute (North-South/South-North)
 WEST_EAST_VEHICLES_PER_MINUTE = 6     # Vehicles per minute (West-East/East-West)
 
 # Derived Parameters
-LAMBDA_RATE_NS = NORTH_SOUTH_VEHICLES_PER_MINUTE / 60  # vehicles per second
-LAMBDA_RATE_WE = WEST_EAST_VEHICLES_PER_MINUTE / 60    # vehicles per second
-SIMULATION_DURATION = HOUR_DURATION * NUM_HOURS        # total simulation time in seconds
-WARMUP_TIME = 4000                                     # warmup time in seconds
-NUM_RUNS = 5                                           # number of runs
+LAMBDA_RATE_NS = NORTH_SOUTH_VEHICLES_PER_MINUTE / 60              # vehicles per second
+LAMBDA_RATE_WE = WEST_EAST_VEHICLES_PER_MINUTE / 60                # vehicles per second
+SIMULATION_DURATION = HOUR_DURATION * NUM_HOURS + WARMUP_TIME      # total simulation time in seconds
+
 
 # Metrics
 all_durations = []
@@ -136,10 +137,11 @@ def run_multiple_simulations_and_analyze(num_runs=NUM_RUNS):
         x_vals, lorenz_vals = lorenz_curve(values)
         axs[i].plot(x_vals, lorenz_vals, label=f'Lorenz - {key}')
         axs[i].plot([0, 1], [0, 1], 'k--', label='Perfect Equality')
-        axs[i].set_title(f"Lorenz Curve - {key}")
-        axs[i].set_xlabel("Fraction of vehicles")
-        axs[i].set_ylabel("Cumulative fraction")
-        axs[i].legend()
+        axs[i].set_title(f"Lorenz Curve - {key}", fontsize=18)
+        axs[i].set_xlabel("Fraction of vehicles", fontsize=16)
+        axs[i].set_ylabel("Cumulative fraction", fontsize=16)
+        axs[i].legend(fontsize=12)
+        axs[i].tick_params(axis='both', labelsize=12)
         axs[i].grid(True)
 
     plt.tight_layout()
@@ -149,13 +151,15 @@ def run_multiple_simulations_and_analyze(num_runs=NUM_RUNS):
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
     for i, (key, values) in enumerate(metrics.items()):
         sns.histplot(values, bins=30, kde=True, ax=axs[i])
-        axs[i].set_title(f"Distribution - {key}")
-        axs[i].set_xlabel("Seconds")
-        axs[i].set_ylabel("Frequency")
+        axs[i].set_title(f"Distribution - {key}", fontsize=18)
+        axs[i].set_xlabel("Seconds", fontsize=16)
+        axs[i].set_ylabel("Frequency", fontsize=16)
+        axs[i].tick_params(axis='both', labelsize=12)
         axs[i].grid(True)
 
     plt.tight_layout()
     plt.show()
+
 
 
 if __name__ == "__main__":
