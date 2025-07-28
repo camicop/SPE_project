@@ -9,7 +9,7 @@ from scipy.stats import norm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation_utils import run_simulation, analyze_tripinfo, plot_vehicle_counts_over_time, estimate_warmup_time, plot_multiple_time_series, run_adaptive_simulation
+from simulation_utils import run_simulation, analyze_tripinfo, estimate_warmup_time, plot_multiple_time_series, run_adaptive_simulation
 
 # Simulation Constants
 HOUR_DURATION = 3600       # duration of one hour in seconds
@@ -88,9 +88,9 @@ def confidence_interval_normal(data, confidence=0.95):
 
 
 if __name__ == "__main__":
-    SIMULATION_DURATION = 10800
-    N_WARMUP_RUNS = 5
-    N_FINAL_RUNS = 30
+
+    N_WARMUP_RUNS = 3
+    N_FINAL_RUNS = 5
 
     strategies = {
         "fixed": {
