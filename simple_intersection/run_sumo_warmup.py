@@ -84,7 +84,7 @@ def number_of_cars_warmup(num_runs):
     plot_multiple_time_series(
         [avg_series], 
         title="Average number of vehicles in system over time", 
-        y_label="verage vehicle count", 
+        y_label="Average vehicle count", 
         show_legend=False, 
         apply_smoothing=False  
         )
@@ -170,7 +170,7 @@ def travel_duration_warmup(num_runs):
        
         plot_multiple_time_series(
             [full_cum_avg],
-            title="Cumulative Average Travel Time (for Warm-up Analysis)",
+            title="Cumulative Average Travel Time",
             y_label="Cumulative average travel time (s)",
             show_legend=False,
             apply_smoothing=False
@@ -186,6 +186,6 @@ def generate_routes():
     print(f"Generated routes in {route_file}")
 
 if __name__ == "__main__":
-    #number_of_cars_warmup(5)
-    travel_duration_warmup(5)
+    #number_of_cars_warmup(50)
+    travel_duration_warmup(50)
 
