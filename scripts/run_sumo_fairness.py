@@ -253,7 +253,7 @@ def plot_radar_chart(all_results):
         ax.plot(angles, values, 'o-', linewidth=2, label=setup, color=colors[i], alpha=0.8)
         ax.fill(angles, values, alpha=0.15, color=colors[i])
     
-    # Customize labels
+    # Customized labels
     label_mapping = {
         'Jain Duration': 'Fairness\nDuration',
         'Jain TimeLoss': 'Fairness\nTime Loss', 
