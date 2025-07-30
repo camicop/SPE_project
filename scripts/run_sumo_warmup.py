@@ -6,8 +6,8 @@ import sys
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation_utils import (
+from simulation.traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
+from simulation.simulation_utils import (
     run_simulation, plot_multiple_time_series
 )
 
@@ -20,9 +20,9 @@ WEST_EAST_VEHICLES_PER_MINUTE = 6
 SIMULATION_DURATION = HOUR_DURATION * NUM_HOURS
 
 # Files
-route_file = "poisson_routes.rou.xml"
-config_file = "poisson_config.sumocfg"
-tripinfo_file = "tripinfo.xml"
+route_file = "configs/poisson_routes.rou.xml"
+config_file = "configs/poisson_config.sumocfg"
+tripinfo_file = "configs/tripinfo.xml"
 
 # Define flows
 north_south_flow = TrafficFlow(
@@ -59,7 +59,7 @@ def number_of_cars_warmup(num_runs):
     for i in range(num_runs):
         print(f"\n--- Run {i+1}/{num_runs} ---")
         generate_routes()
-        run_simulation(config_file, SIMULATION_DURATION, gui=False)
+        run_simulation(config_file, SIMULATION_DURATION, tripinfo_file=tripinfo_file, gui=False)
         df = pd.read_xml(tripinfo_file)
         series = np.zeros(SIMULATION_DURATION+1)
         for _, row in df.iterrows():
@@ -123,7 +123,7 @@ def travel_duration_warmup(num_runs):
     for i in range(num_runs):
         print(f"\n--- Run {i+1}/{num_runs} ---")
         generate_routes()
-        run_simulation(config_file, SIMULATION_DURATION, gui=False)
+        run_simulation(config_file, SIMULATION_DURATION, tripinfo_file=tripinfo_file, gui=False)
         
         df = pd.read_xml(tripinfo_file)
         arrivals = df['arrival'].astype(float).values
@@ -187,5 +187,5 @@ def generate_routes():
 
 if __name__ == "__main__":
     #number_of_cars_warmup(50)
-    travel_duration_warmup(50)
+    travel_duration_warmup(5)
 

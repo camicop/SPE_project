@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation_utils import run_simulation, analyze_tripinfo, estimate_warmup_time, plot_multiple_time_series, run_adaptive_simulation
+from simulation.traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
+from simulation.simulation_utils import run_simulation, update_traffic_light_file
 
 # Simulation Constants
 HOUR_DURATION = 3600       # duration of one hour in seconds
@@ -39,10 +39,10 @@ TRAFFIC_LIGHT_SETUPS = [
 ]
 
 # Files
-route_file = "poisson_routes.rou.xml"
-config_file = "poisson_config.sumocfg"
-tripinfo_file = "tripinfo.xml"
-trafficlight_file = "trafficlight.tll.xml"
+route_file = "configs/poisson_routes.rou.xml"
+config_file = "configs/poisson_config.sumocfg"
+tripinfo_file = "configs/tripinfo.xml"
+trafficlight_file = "configs/trafficlight.tll.xml"
 
 # Traffic Flows
 north_south_flow = TrafficFlow(
@@ -79,41 +79,6 @@ east_west_flow = TrafficFlow(
 )
 
 flows = [north_south_flow, south_north_flow, west_east_flow, east_west_flow]
-
-def generate_traffic_light_file(ns_green_duration, ew_green_duration):
-    """Generate traffic light configuration file with specified green durations"""
-    yellow_duration = 5
-    
-    root = ET.Element("additionalFile")
-    tl_logic = ET.SubElement(root, "tlLogic", 
-                            id="center", 
-                            type="static", 
-                            programID="myProgram", 
-                            offset="0")
-    
-    # Green Nord-Sud
-    ET.SubElement(tl_logic, "phase", 
-                 duration=str(ns_green_duration), 
-                 state="GrGr")
-    
-    # Yellow Nord-Sud
-    ET.SubElement(tl_logic, "phase", 
-                 duration=str(yellow_duration), 
-                 state="yryr")
-    
-    # Green Est-Ovest
-    ET.SubElement(tl_logic, "phase", 
-                 duration=str(ew_green_duration), 
-                 state="rGrG")
-    
-    # Yellow Est-Ovest
-    ET.SubElement(tl_logic, "phase", 
-                 duration=str(yellow_duration), 
-                 state="ryry")
-    
-    # Write to file
-    tree = ET.ElementTree(root)
-    tree.write(trafficlight_file, encoding='utf-8', xml_declaration=True)
 
 def generate_routes():
     """Generate route file"""
@@ -185,6 +150,12 @@ def run_setup_simulations(setup, num_runs=NUM_RUNS):
     setup_vehicles_not_inserted = []
     
     # Generate traffic light configuration for this setup
+    update_traffic_light_file(
+        trafficlight_path=trafficlight_file,
+        ns_green_duration=40,
+        ew_green_duration=30,
+        yellow_duration=5
+    )
     generate_traffic_light_file(setup['ns_green'], setup['ew_green'])
     
     for i in range(num_runs):
