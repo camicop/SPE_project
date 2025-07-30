@@ -1,0 +1,22 @@
+Loading net-file from 'simple_intersection.net.xml' ... done (1ms).
+Loading additional-files from 'trafficlight.tll.xml' ... done (0ms).
+Loading done.
+Simulation version 1.20.0 started with time: 0.00.
+Simulation ended at time: 14800.00
+Reason: The final simulation step has been reached.
+Performance: 
+ Duration: 1.06s
+ Real time factor: 13909.8
+ UPS: 866404.135338
+Vehicles: 
+ Inserted: 6064 (Loaded: 8005)
+ Running: 61
+ Waiting: 1941
+Statistics (avg of 6003):
+ RouteLength: 394.90
+ Speed: 9.23
+ Duration: 150.60
+ WaitingTime: 98.04
+ TimeLoss: 117.52
+ DepartDelay: 719.19
+
