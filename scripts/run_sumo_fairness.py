@@ -13,13 +13,13 @@ import xml.etree.ElementTree as ET
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from simulation.traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation.simulation_utils import run_simulation, update_traffic_light_file
+from simulation.simulation_utils import run_simulation, write_traffic_light_file, get_inserted_vehicle_count, get_loaded_vehicle_count
 
 # Simulation Constants
 HOUR_DURATION = 3600       # duration of one hour in seconds
 NUM_HOURS = 3              # number of hours to simulate
 WARMUP_TIME = 4000         # warmup time in seconds
-NUM_RUNS = 5              # number of runs per setup
+NUM_RUNS = 5               # number of runs per setup
 
 NORTH_SOUTH_VEHICLES_PER_MINUTE = 10  # Vehicles per minute (North-South/South-North)
 WEST_EAST_VEHICLES_PER_MINUTE = 6     # Vehicles per minute (West-East/East-West)
@@ -31,11 +31,11 @@ SIMULATION_DURATION = HOUR_DURATION * NUM_HOURS + WARMUP_TIME      # total simul
 
 # Traffic Light Setups - different green durations for North-South
 TRAFFIC_LIGHT_SETUPS = [
-    {"ns_green": 30, "ew_green": 50, "name": "NS30_EW50"},
-    {"ns_green": 40, "ew_green": 40, "name": "NS40_EW40"}, 
-    {"ns_green": 50, "ew_green": 30, "name": "NS50_EW30"},
-    {"ns_green": 60, "ew_green": 20, "name": "NS60_EW20"},
-    {"ns_green": 70, "ew_green": 10, "name": "NS70_EW10"}
+    {"ns_green": 30, "ew_green": 30, "name": "NS30_EW50"},
+    {"ns_green": 40, "ew_green": 30, "name": "NS40_EW40"}, 
+    {"ns_green": 35, "ew_green": 30, "name": "NS50_EW30"},
+    {"ns_green": 30, "ew_green": 25, "name": "NS60_EW20"},
+    {"ns_green": 45, "ew_green": 35, "name": "NS70_EW10"}
 ]
 
 # Files
@@ -104,41 +104,6 @@ def lorenz_curve(data):
     x_vals = np.linspace(0, 1, len(data))
     return x_vals, lorenz
 
-def run_simulation_with_logging(config_file, duration, gui=False):
-    """Run SUMO simulation with logging to capture vehicle statistics"""
-    cmd = [
-        "sumo" if not gui else "sumo-gui",
-        "-c", config_file,
-        "--duration-log.statistics", "true",
-        "--log", "sumo.log",
-        "--verbose", "true"
-    ]
-    
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        
-        # Parse the output to get vehicle statistics
-        output_text = result.stdout + result.stderr
-        
-        # Look for vehicle statistics in output
-        import re
-        loaded_match = re.search(r'Vehicles:\s+.*?Loaded:\s*(\d+)', output_text, re.DOTALL)
-        inserted_match = re.search(r'Inserted:\s*(\d+)', output_text)
-        
-        if loaded_match and inserted_match:
-            loaded = int(loaded_match.group(1))
-            inserted = int(inserted_match.group(1))
-            return loaded - inserted
-        
-        return 0
-        
-    except subprocess.TimeoutExpired:
-        print("Simulation timeout!")
-        return 0
-    except Exception as e:
-        print(f"Error running simulation: {e}")
-        return 0
-
 def run_setup_simulations(setup, num_runs=NUM_RUNS):
     """Run multiple simulations for a specific traffic light setup"""
     print(f"\n=== Running simulations for setup: {setup['name']} ===")
@@ -150,13 +115,12 @@ def run_setup_simulations(setup, num_runs=NUM_RUNS):
     setup_vehicles_not_inserted = []
     
     # Generate traffic light configuration for this setup
-    update_traffic_light_file(
+    write_traffic_light_file(
         trafficlight_path=trafficlight_file,
-        ns_green_duration=40,
-        ew_green_duration=30,
+        ns_green_duration=setup['ns_green'],
+        ew_green_duration=setup['ew_green'],
         yellow_duration=5
     )
-    generate_traffic_light_file(setup['ns_green'], setup['ew_green'])
     
     for i in range(num_runs):
         print(f"Run {i+1}/{num_runs}", end=" ")
@@ -164,8 +128,9 @@ def run_setup_simulations(setup, num_runs=NUM_RUNS):
         # Generate routes for this run
         generate_routes()
         
-        # Run simulation with logging
-        vehicles_not_inserted = run_simulation_with_logging(config_file, SIMULATION_DURATION, gui=False)
+        # Run simulation 
+        run_simulation(config_file, SIMULATION_DURATION, tripinfo_file=tripinfo_file, gui=False, quiet=True)
+        vehicles_not_inserted = get_loaded_vehicle_count(route_file_path=route_file) - get_inserted_vehicle_count(tripinfo_path=tripinfo_file)
         
         if not os.path.exists(tripinfo_file):
             print(f"Error: {tripinfo_file} not found.")
@@ -181,9 +146,6 @@ def run_setup_simulations(setup, num_runs=NUM_RUNS):
         
         # Store vehicles not inserted for this run
         setup_vehicles_not_inserted.append(vehicles_not_inserted)
-        
-        if (i + 1) % 10 == 0:
-            print(f"\nCompleted {i+1} runs")
     
     return {
         "duration": np.array(setup_durations),
@@ -239,9 +201,9 @@ def plot_radar_chart(all_results):
             'Vehicles Not Inserted': np.mean(results['vehicles_not_inserted'])
         }
     
-    # Print raw values for clarity
+    # Print values
     print("\n" + "="*100)
-    print("RAW METRICS (before normalization for radar chart)")
+    print("METRICS before normalization for radar chart")
     print("="*100)
     print(f"{'Setup':<15} {'Jain Dur':<10} {'Jain TL':<10} {'Jain WT':<10} {'Avg Dur':<10} {'Avg TL':<10} {'Avg WT':<10} {'Not Ins':<10}")
     print("-" * 100)
@@ -251,16 +213,10 @@ def plot_radar_chart(all_results):
         print(f"{setup:<15} {metrics['Jain Duration']:<10.4f} {metrics['Jain TimeLoss']:<10.4f} {metrics['Jain WaitingTime']:<10.4f} "
               f"{metrics['Avg Duration']:<10.1f} {metrics['Avg TimeLoss']:<10.1f} {metrics['Avg WaitingTime']:<10.1f} {metrics['Vehicles Not Inserted']:<10.1f}")
     
-    print("\nNOTE: For radar chart normalization:")
-    print("- Jain indices (0-1): Higher = Better (more fair)")
-    print("- Average times: Lower = Better (inverted for radar chart)")
-    print("- Vehicles not inserted: Lower = Better (inverted for radar chart)")
-    
-    # Prepare data for radar chart
     metrics_for_radar = ['Jain Duration', 'Jain TimeLoss', 'Jain WaitingTime', 
                         'Avg Duration', 'Avg TimeLoss', 'Avg WaitingTime', 'Vehicles Not Inserted']
     
-    # Normalize metrics for radar chart (0-1 scale, higher = better)
+    # Normalize metrics for radar chart (0-1 scale, higher is better)
     normalized_data = {}
     for setup in setup_names:
         normalized_data[setup] = []
@@ -269,17 +225,15 @@ def plot_radar_chart(all_results):
         values = [raw_metrics[setup][metric] for setup in setup_names]
         
         if 'Jain' in metric:
-            # Jain index: already 0-1, higher is better
+            # Jain index: already 0-1
             normalized_values = values
         else:
-            # Time metrics and vehicles not inserted: lower is better, so invert
+            # Time metrics and vehicles not inserted: need to invert
             max_val = max(values)
             min_val = min(values)
             if max_val > min_val:
-                # Invert scale: best (lowest) becomes 1, worst (highest) becomes 0
                 normalized_values = [(max_val - v) / (max_val - min_val) for v in values]
             else:
-                # All values are the same
                 normalized_values = [1.0] * len(values)
         
         for i, setup in enumerate(setup_names):
@@ -289,12 +243,12 @@ def plot_radar_chart(all_results):
     fig, ax = plt.subplots(figsize=(14, 10), subplot_kw=dict(projection='polar'))
     
     angles = np.linspace(0, 2 * np.pi, len(metrics_for_radar), endpoint=False).tolist()
-    angles += angles[:1]  # Complete the circle
+    angles += angles[:1]  
     
     colors = cm.tab10(np.linspace(0, 1, len(setup_names)))
     
     for i, setup in enumerate(setup_names):
-        values = normalized_data[setup] + [normalized_data[setup][0]]  # Complete the circle
+        values = normalized_data[setup] + [normalized_data[setup][0]]  
         
         ax.plot(angles, values, 'o-', linewidth=2, label=setup, color=colors[i], alpha=0.8)
         ax.fill(angles, values, alpha=0.15, color=colors[i])
@@ -307,7 +261,7 @@ def plot_radar_chart(all_results):
         'Avg Duration': 'Efficiency\nDuration',
         'Avg TimeLoss': 'Efficiency\nTime Loss',
         'Avg WaitingTime': 'Efficiency\nWaiting Time',
-        'Vehicles Not Inserted': 'System\nCapacity'
+        'Vehicles Not Inserted': 'System\nAbility to let all cars enter the system'
     }
     
     labels = [label_mapping[metric] for metric in metrics_for_radar]
@@ -317,7 +271,7 @@ def plot_radar_chart(all_results):
     ax.set_ylim(0, 1)
     ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
     ax.set_yticklabels(['0.2', '0.4', '0.6', '0.8', '1.0'], fontsize=8)
-    ax.set_title("Traffic Light Setup Comparison\n(All metrics normalized: Higher = Better)", 
+    ax.set_title("Traffic Light Setup\nMetrics are normalized: a Higher value is Better", 
                  fontsize=14, fontweight='bold', pad=30)
     ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=10)
     ax.grid(True, alpha=0.3)
@@ -325,29 +279,7 @@ def plot_radar_chart(all_results):
     plt.tight_layout()
     plt.show()
 
-def print_summary_statistics(all_results):
-    """Print summary statistics for all setups"""
-    print("\n" + "="*80)
-    print("SUMMARY STATISTICS")
-    print("="*80)
-    
-    print(f"{'Setup':<15} {'Jain Dur':<10} {'Jain TL':<10} {'Jain WT':<10} {'Avg Dur':<10} {'Avg TL':<10} {'Avg WT':<10} {'Not Ins':<10}")
-    print("-" * 80)
-    
-    for setup, results in all_results.items():
-        jain_dur = jain_index(results['duration'])
-        jain_tl = jain_index(results['timeLoss'])
-        jain_wt = jain_index(results['waitingTime'])
-        avg_dur = np.mean(results['duration'])
-        avg_tl = np.mean(results['timeLoss'])
-        avg_wt = np.mean(results['waitingTime'])
-        avg_not_ins = np.mean(results['vehicles_not_inserted'])
-        
-        print(f"{setup:<15} {jain_dur:<10.4f} {jain_tl:<10.4f} {jain_wt:<10.4f} "
-              f"{avg_dur:<10.1f} {avg_tl:<10.1f} {avg_wt:<10.1f} {avg_not_ins:<10.1f}")
-
-def main():
-    """Main function to run all simulations and analysis"""
+if __name__ == "__main__":
     all_results = {}
     
     # Run simulations for each setup
@@ -355,16 +287,8 @@ def main():
         results = run_setup_simulations(setup)
         all_results[setup['name']] = results
     
-    # Print summary statistics
-    print_summary_statistics(all_results)
-    
     # Plot comparative Lorenz curves
     plot_comparative_lorenz_curves(all_results)
     
     # Plot radar chart
     plot_radar_chart(all_results)
-    
-    print("\nAnalysis complete!")
-
-if __name__ == "__main__":
-    main()

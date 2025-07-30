@@ -1,2 +1,13 @@
-<?xml version='1.0' encoding='utf-8'?>
-<additionalFile><tlLogic id="center" type="static" programID="myProgram" offset="0"><phase duration="30" state="GrGr" /><phase duration="5" state="yryr" /><phase duration="30" state="rGrG" /><phase duration="5" state="ryry" /></tlLogic></additionalFile>
+<?xml version="1.0" encoding="utf-8"?>
+<additional>
+  <tlLogic id="center" type="static" programID="myProgram" offset="0">
+    <!-- Green Nord-Sud -->
+    <phase duration="45" state="GrGr"/>
+    <!-- Yellow Nord-Sud -->
+    <phase duration="5" state="yryr"/>
+    <!-- Green Est-Ovest -->
+    <phase duration="35" state="rGrG"/>
+    <!-- Yellow Est-Ovest -->
+    <phase duration="5" state="ryry"/>
+  </tlLogic>
+</additional>

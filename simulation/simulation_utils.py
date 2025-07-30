@@ -9,19 +9,23 @@ import numpy as np
 
 from scipy.signal import savgol_filter
 
-def run_simulation(config_file, simulation_duration, tripinfo_file, gui=False):
+def run_simulation(config_file, simulation_duration, tripinfo_file, gui=False, quiet=False):
     update_config_end_time(config_file, simulation_duration)
-    print("Starting SUMO simulation...")
+    
+    if not quiet:
+        print("Starting SUMO simulation...")
 
     command = ["sumo-gui" if gui else "sumo", "-c", config_file, "--no-step-log"]
 
     result = subprocess.run(command, capture_output=True, text=True)
 
-    print("SUMO simulation finished.")
-    if result.returncode != 0:
-        print("SUMO error:", result.stderr)
-    else:
-        print(result.stdout)
+    if not quiet:
+        print("SUMO simulation finished.")
+        if result.returncode != 0:
+            print("SUMO error:", result.stderr)
+        else:
+            print(result.stdout)
+
 
 def analyze_tripinfo(tripinfo_file, warmup_time):
     if not os.path.exists(tripinfo_file):
@@ -81,7 +85,7 @@ def plot_multiple_time_series(series_list, title, y_label, labels=None, show_leg
     plt.tight_layout()
     plt.show()
 
-def update_traffic_light_file(
+def write_traffic_light_file(
     trafficlight_path: str,
     ns_green_duration: int,
     ew_green_duration: int,
@@ -92,33 +96,35 @@ def update_traffic_light_file(
     offset: str = "0"
 ) -> None:
 
-    tree = ET.parse(trafficlight_path)
+    # Prepara le linee da scrivere
+    xml_lines = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<additional>',
+        f'  <tlLogic id="{tl_id}" type="{tl_type}" programID="{program_id}" offset="{offset}">',
+        f'    <!-- Green Nord-Sud -->',
+        f'    <phase duration="{ns_green_duration}" state="GrGr"/>',
+        f'    <!-- Yellow Nord-Sud -->',
+        f'    <phase duration="{yellow_duration}" state="yryr"/>',
+        f'    <!-- Green Est-Ovest -->',
+        f'    <phase duration="{ew_green_duration}" state="rGrG"/>',
+        f'    <!-- Yellow Est-Ovest -->',
+        f'    <phase duration="{yellow_duration}" state="ryry"/>',
+        '  </tlLogic>',
+        '</additional>',
+        ''  # newline finale
+    ]
+
+    # Scrivi il file sovrascrivendo tutto
+    with open(trafficlight_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(xml_lines))
+
+
+def get_inserted_vehicle_count(tripinfo_path: str) -> int:
+    tree = ET.parse(tripinfo_path)
     root = tree.getroot()
+    return len(root.findall("tripinfo"))  # Ogni <tripinfo> corrisponde a un veicolo inserito
 
-    if root.tag != "additional":
-        additional = root.find("additional")
-        if additional is None:
-            raise RuntimeError(f"No <additional> root found in {trafficlight_path}")
-        root = additional
-
-    for old in root.findall(f"tlLogic[@id='{tl_id}']"):
-        root.remove(old)
-
-    tl_logic = ET.SubElement(
-        root, "tlLogic",
-        id=tl_id,
-        type=tl_type,
-        programID=program_id,
-        offset=offset
-    )
-
-    # Green Nord-Sud
-    ET.SubElement(tl_logic, "phase", duration=str(ns_green_duration), state="GrGr")
-    # Yellow Nord-Sud
-    ET.SubElement(tl_logic, "phase", duration=str(yellow_duration),  state="yryr")
-    # Green Est-Ovest
-    ET.SubElement(tl_logic, "phase", duration=str(ew_green_duration), state="rGrG")
-    # Yellow Est-Ovest
-    ET.SubElement(tl_logic, "phase", duration=str(yellow_duration),  state="ryry")
-
-    tree.write(trafficlight_path, encoding='utf-8', xml_declaration=True)
+def get_loaded_vehicle_count(route_file_path: str) -> int:
+    tree = ET.parse(route_file_path)
+    root = tree.getroot()
+    return len(root.findall("vehicle")) + len(root.findall("trip"))  # Se usi <trip> al posto di <vehicle>
