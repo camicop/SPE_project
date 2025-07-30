@@ -61,15 +61,16 @@ east_west_flow = TrafficFlow(
     edges="east2center center2west",
     vehicle_type=VehicleType(id="east2west_car", max_speed_kmh=30))
 
-# Car flows generation
+flows = [north_south_flow, south_north_flow, west_east_flow, east_west_flow]
+
 def generate_routes():
+    """Generate route file"""
     with open(route_file, "w") as f:
-        trafficManager = TrafficFlowManager([north_south_flow, south_north_flow, west_east_flow, east_west_flow])
+        trafficManager = TrafficFlowManager(flows)
         f.write(trafficManager.generate_routes_xml())
 
-    print(f"Generated vehicles in {route_file}")
-
 if __name__ == "__main__":
+    """Run a single basic simulation"""
     gui = False
     if len(sys.argv) > 1:
         if sys.argv[1].lower() in ["gui", "--gui", "-g"]:

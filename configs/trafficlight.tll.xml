@@ -6,7 +6,7 @@
     <!-- Yellow Nord-Sud -->
     <phase duration="5" state="yryr"/>
     <!-- Green Est-Ovest -->
-    <phase duration="35" state="rGrG"/>
+    <phase duration="25" state="rGrG"/>
     <!-- Yellow Est-Ovest -->
     <phase duration="5" state="ryry"/>
   </tlLogic>

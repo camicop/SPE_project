@@ -58,23 +58,18 @@ def update_config_end_time(config_path, new_end_time):
                 child.set("value", str(new_end_time))
                 break
         else:
-            # Se non esiste, aggiungilo
             end_elem = ET.SubElement(time_elem, "end")
             end_elem.set("value", str(new_end_time))
 
     tree.write(config_path)
 
 
-def plot_multiple_time_series(series_list, title, y_label, labels=None, show_legend=True, apply_smoothing=True):
-    import matplotlib.pyplot as plt
-    from scipy.signal import savgol_filter
-
+def plot_multiple_time_series(series_list, title, y_label, labels=None, show_legend=True):
     plt.rcParams.update({'font.size': 20})
     plt.figure(figsize=(12, 6))
     for i, series in enumerate(series_list):
-        data = savgol_filter(series, window_length=31, polyorder=3) if apply_smoothing else series
         label = labels[i] if labels and i < len(labels) else f"Simulation {i}"
-        plt.plot(data, '-', label=label)
+        plt.plot(series, '-', label=label)
 
     plt.title(title)
     plt.xlabel("Time (s)")

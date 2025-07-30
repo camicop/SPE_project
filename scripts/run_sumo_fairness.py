@@ -19,7 +19,7 @@ from simulation.simulation_utils import run_simulation, write_traffic_light_file
 HOUR_DURATION = 3600       # duration of one hour in seconds
 NUM_HOURS = 3              # number of hours to simulate
 WARMUP_TIME = 4000         # warmup time in seconds
-NUM_RUNS = 5               # number of runs per setup
+NUM_RUNS = 15               # number of runs per setup
 
 NORTH_SOUTH_VEHICLES_PER_MINUTE = 10  # Vehicles per minute (North-South/South-North)
 WEST_EAST_VEHICLES_PER_MINUTE = 6     # Vehicles per minute (West-East/East-West)
@@ -31,11 +31,11 @@ SIMULATION_DURATION = HOUR_DURATION * NUM_HOURS + WARMUP_TIME      # total simul
 
 # Traffic Light Setups - different green durations for North-South
 TRAFFIC_LIGHT_SETUPS = [
-    {"ns_green": 30, "ew_green": 30, "name": "NS30_EW50"},
-    {"ns_green": 40, "ew_green": 30, "name": "NS40_EW40"}, 
-    {"ns_green": 35, "ew_green": 30, "name": "NS50_EW30"},
-    {"ns_green": 30, "ew_green": 25, "name": "NS60_EW20"},
-    {"ns_green": 45, "ew_green": 35, "name": "NS70_EW10"}
+    {"ns_green": 30, "ew_green": 30, "name": "NS30_EW30"},
+    {"ns_green": 40, "ew_green": 30, "name": "NS40_EW30"}, 
+    {"ns_green": 50, "ew_green": 30, "name": "NS50_EW30"},
+    {"ns_green": 35, "ew_green": 20, "name": "NS35_EW20"},
+    {"ns_green": 45, "ew_green": 25, "name": "NS45_EW25"}
 ]
 
 # Files
@@ -174,11 +174,11 @@ def plot_comparative_lorenz_curves(all_results):
                        alpha=0.8)
         
         axs[i].set_title(f"Lorenz Curves - {metric}", fontsize=16, fontweight='bold')
-        axs[i].set_xlabel("Fraction of vehicles", fontsize=14)
-        axs[i].set_ylabel("Cumulative fraction", fontsize=14)
+        axs[i].set_xlabel("Fraction of vehicles", fontsize=18)
+        axs[i].set_ylabel("Cumulative fraction", fontsize=18)
         axs[i].legend(fontsize=10)
         axs[i].grid(True, alpha=0.3)
-        axs[i].tick_params(axis='both', labelsize=12)
+        axs[i].tick_params(axis='both', labelsize=15)
     
     plt.tight_layout()
     plt.show()
@@ -201,7 +201,7 @@ def plot_radar_chart(all_results):
             'Vehicles Not Inserted': np.mean(results['vehicles_not_inserted'])
         }
     
-    # Print values
+    # Print metric values
     print("\n" + "="*100)
     print("METRICS before normalization for radar chart")
     print("="*100)
@@ -267,13 +267,13 @@ def plot_radar_chart(all_results):
     labels = [label_mapping[metric] for metric in metrics_for_radar]
     
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=10)
+    ax.set_xticklabels(labels, fontsize=16)
     ax.set_ylim(0, 1)
     ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
-    ax.set_yticklabels(['0.2', '0.4', '0.6', '0.8', '1.0'], fontsize=8)
+    ax.set_yticklabels(['0.2', '0.4', '0.6', '0.8', '1.0'], fontsize=16)
     ax.set_title("Traffic Light Setup\nMetrics are normalized: a Higher value is Better", 
                  fontsize=14, fontweight='bold', pad=30)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=10)
+    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=20)
     ax.grid(True, alpha=0.3)
     
     plt.tight_layout()

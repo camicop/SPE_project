@@ -7,13 +7,12 @@ import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from simulation.traffic_flow import TrafficFlow, TrafficFlowManager, VehicleType
-from simulation.simulation_utils import (
-    run_simulation, plot_multiple_time_series
-)
+from simulation.simulation_utils import run_simulation, plot_multiple_time_series
 
 # Simulation Constants
-HOUR_DURATION = 3600  # seconds
-NUM_HOURS = 3         # number of hours of simulation
+HOUR_DURATION = 3600      # duration of one hour in seconds
+NUM_HOURS = 3             # number of hours to simulate
+NUM_RUNS = 5              # number of runs
 
 NORTH_SOUTH_VEHICLES_PER_MINUTE = 10
 WEST_EAST_VEHICLES_PER_MINUTE = 6
@@ -53,13 +52,15 @@ east_west_flow = TrafficFlow(
 flows = [north_south_flow, south_north_flow, west_east_flow, east_west_flow]
 
 def number_of_cars_warmup(num_runs):
+    """Warmup estimation by analysing the number of cars through time"""
+
     all_series = []
 
     # Run simulations and collect time series
     for i in range(num_runs):
         print(f"\n--- Run {i+1}/{num_runs} ---")
         generate_routes()
-        run_simulation(config_file, SIMULATION_DURATION, tripinfo_file=tripinfo_file, gui=False)
+        run_simulation(config_file, SIMULATION_DURATION, tripinfo_file=tripinfo_file, gui=False, quiet=True)
         df = pd.read_xml(tripinfo_file)
         series = np.zeros(SIMULATION_DURATION+1)
         for _, row in df.iterrows():
@@ -76,8 +77,7 @@ def number_of_cars_warmup(num_runs):
         combined, 
         title="Number of vehicles in the system over time - All Runs", 
         y_label="Number of vehicles", 
-        show_legend=False, 
-        apply_smoothing=False  
+        show_legend=False
         ) 
 
     # Plot just the average of all runs
@@ -85,8 +85,7 @@ def number_of_cars_warmup(num_runs):
         [avg_series], 
         title="Average number of vehicles in system over time", 
         y_label="Average vehicle count", 
-        show_legend=False, 
-        apply_smoothing=False  
+        show_legend=False
         )
 
     # Plot cumulative average of the mean series
@@ -95,13 +94,17 @@ def number_of_cars_warmup(num_runs):
         [cum_avg],
         title="Cumulative average of vehicle counts over time",
         y_label="Cumulative average vehicles",
-        show_legend=False, 
-        apply_smoothing=False  
+        show_legend=False
         )
 
 
 def travel_duration_warmup(num_runs):
-    def compute_instantaneous_travel_time_series_fast(arrivals, durations, sim_duration):
+    """Warmup estimation by analysing the average travel duration through time"""
+
+    def compute_instantaneous_travel_time_series(arrivals, durations, sim_duration):
+        """ At each second, we considered all vehicles
+        currently in the system and calculated the 
+        average of their final travel durations """
         arrivals = np.array(arrivals)
         durations = np.array(durations)
         departures = arrivals + durations
@@ -109,7 +112,7 @@ def travel_duration_warmup(num_runs):
         avg_series = np.full(sim_duration + 1, np.nan)
         
         for t in range(sim_duration + 1):
-            # Vectorized check: vehicles present at time t
+            # Vehicles present at time t
             in_system = (arrivals <= t) & (t < departures)
             
             if np.any(in_system):
@@ -118,18 +121,18 @@ def travel_duration_warmup(num_runs):
         
         return avg_series
 
-    # Rest of the function remains the same
+
     all_duration_series = []
     for i in range(num_runs):
         print(f"\n--- Run {i+1}/{num_runs} ---")
         generate_routes()
-        run_simulation(config_file, SIMULATION_DURATION, tripinfo_file=tripinfo_file, gui=False)
+        run_simulation(config_file, SIMULATION_DURATION, tripinfo_file=tripinfo_file, gui=False, quiet=True)
         
         df = pd.read_xml(tripinfo_file)
         arrivals = df['arrival'].astype(float).values
         durations = df['duration'].astype(float).values
         
-        series = compute_instantaneous_travel_time_series_fast(arrivals, durations, SIMULATION_DURATION)
+        series = compute_instantaneous_travel_time_series(arrivals, durations, SIMULATION_DURATION)
         all_duration_series.append(series)
 
     # Average across all runs
@@ -142,8 +145,7 @@ def travel_duration_warmup(num_runs):
         combined,
         title="Instantaneous Average Travel Time - All Runs",
         y_label="Average travel time (s)",
-        show_legend=False,
-        apply_smoothing=False
+        show_legend=False
     )
 
     # Plot just the average of all runs
@@ -151,8 +153,7 @@ def travel_duration_warmup(num_runs):
         [avg_series],
         title="Average Travel Time Across All Runs",
         y_label="Average travel time (s)",
-        show_legend=False,
-        apply_smoothing=False
+        show_legend=False
     )
 
     # Plot cumulative average of the mean series
@@ -172,20 +173,17 @@ def travel_duration_warmup(num_runs):
             [full_cum_avg],
             title="Cumulative Average Travel Time",
             y_label="Cumulative average travel time (s)",
-            show_legend=False,
-            apply_smoothing=False
+            show_legend=False
         )
 
 
-
-# Route generation
 def generate_routes():
+    """Generate route file"""
     with open(route_file, "w") as f:
         manager = TrafficFlowManager(flows)
         f.write(manager.generate_routes_xml())
-    print(f"Generated routes in {route_file}")
 
 if __name__ == "__main__":
-    #number_of_cars_warmup(50)
-    travel_duration_warmup(5)
+    #number_of_cars_warmup(NUM_RUNS)
+    travel_duration_warmup(NUM_RUNS)
 

@@ -32,6 +32,6 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # 5. Run simulation using the script
+#$PYTHON -m scripts.run_sumo_warmup
 $PYTHON -m scripts.run_sumo_fairness
-# $PYTHON -m scripts.run_sumo_warmup
 #$PYTHON -m scripts.run_sumo "$@"
