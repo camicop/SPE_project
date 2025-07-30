@@ -2,7 +2,7 @@
 
 This project simulates a simple `plus`-shaped intersection in SUMO, where vehicles move **north-south** and **east-west** (and vice versa), regulated by a **static traffic light** with green, yellow and red phases.
 
-<div style="display: flex; gap: 40px;">
+<div style="display: flex; gap: 20px;">
   <img src="assets/simple_intersection.gif" height="400"/>
   <img src="assets/intersection.png" height="400"/>
 </div>
